@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102b52">
+<meta name="description" content="Kamran's Business Manager for Gulbahar And Sons Super Point">
+<link rel="manifest" href="manifest.json">
+<title>Kamran's Business Manager</title>
+<style>
+:root{--navy:#102b52;--blue:#194578;--gold:#d6ad55;--bg:#f3f5f8;--ink:#172235;--muted:#6c7788;--line:#e3e8ef;--white:#fff;--red:#bd3e43;--green:#16845b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(125deg,var(--navy),var(--blue));color:white;padding:20px 17px 17px;border-bottom:4px solid var(--gold)}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border:2px solid var(--gold);border-radius:14px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:21px}
+h1{font-size:19px;margin:0}header p{margin:4px 0 0;color:#dbe5f3;font-size:12px}
+main{max-width:900px;margin:auto;padding:15px 13px 90px}.tabs{display:flex;gap:7px;overflow:auto;padding:10px 0 13px;scrollbar-width:none}.tabs button{white-space:nowrap;border:1px solid var(--line);background:white;color:var(--navy);padding:9px 13px;border-radius:22px;font-weight:650}.tabs button.active{background:var(--navy);color:white;border-color:var(--gold)}
+h2{font-size:19px;margin:12px 0}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:white;border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 2px 7px #162b4b08}.metric{font-size:21px;font-weight:800;margin-top:5px;color:var(--navy);overflow-wrap:anywhere}.gold{color:#a77b1c}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,.btn{cursor:pointer}.primary{background:var(--navy);color:white;border:0;border-radius:10px;padding:11px 14px;font-weight:700}.secondary{background:#fff;border:1px solid var(--line);color:var(--navy);border-radius:10px;padding:10px 13px;font-weight:650}.danger{color:var(--red);border-color:#f0caca}
+.list{display:grid;gap:8px;margin-top:10px}.item{background:white;border:1px solid var(--line);border-radius:12px;padding:12px}.item small{color:var(--muted)}.amount{font-weight:800;color:var(--navy)}.empty{text-align:center;padding:25px;color:var(--muted);background:white;border-radius:14px;border:1px dashed #cbd4df}
+label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccd5e0;border-radius:9px;font:inherit;background:white;color:var(--ink)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.full{grid-column:1/-1}
+dialog{border:0;border-radius:17px;width:min(94vw,480px);padding:18px;box-shadow:0 18px 70px #0005}dialog::backdrop{background:#07142699}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:17px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:16px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.tabs{flex-wrap:wrap}.formgrid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">GS</div><div><h1>Kamran's Business Manager</h1><p>Gulbahar And Sons Super Point</p></div></div></header>
+<main>
+<nav class="tabs" id="tabs"></nav>
+<div id="view"></div>
+</main>
+<footer>Kamran's Business Manager · Your data stays on this device. Export backups regularly.</footer>
+<dialog id="dlg"><form id="entryForm" method="dialog"><div class="row"><h2 id="dlgTitle">Add record</h2><button type="button" class="secondary" id="closeDlg">✕</button></div><div id="fields"></div><div class="dialog-actions"><button type="button" class="secondary" id="cancelDlg">Cancel</button><button class="primary" type="submit">Save record</button></div></form></dialog>
+<script>
+const $=s=>document.querySelector(s), money=n=>'Rs '+Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2}), today=()=>new Date().toISOString().slice(0,10);
+const keys=['products','sales','purchases','expenses','customers','suppliers'];
+let db={}; keys.forEach(k=>{try{db[k]=JSON.parse(localStorage.getItem('kbm_'+k)||'[]')}catch{db[k]=[]}});
+let tab='Dashboard', edit=null;
+function save(){keys.forEach(k=>localStorage.setItem('kbm_'+k,JSON.stringify(db[k])));render()}
+const configs={
+Products:{key:'products',fields:[['name','Product name','text',1],['sku','Code / SKU','text'],['category','Category','text'],['buy','Purchase price','number'],['sell','Selling price','number'],['stock','Opening stock / quantity','number'],['min','Low-stock alert at','number']]},
+Sales:{key:'sales',fields:[['date','Date','date',1],['product','Product','product',1],['qty','Quantity','number',1],['price','Selling price each','number',1],['customer','Customer (optional)','text'],['paid','Amount received','number']]},
+Purchases:{key:'purchases',fields:[['date','Date','date',1],['product','Product','product',1],['qty','Quantity','number',1],['price','Purchase price each','number',1],['supplier','Supplier (optional)','text'],['paid','Amount paid','number']]},
+Expenses:{key:'expenses',fields:[['date','Date','date',1],['title','Expense details','text',1],['category','Category','text'],['amount','Amount','number',1]]},
+Customers:{key:'customers',fields:[['name','Customer name','text',1],['phone','Phone','tel'],['opening','Opening balance owed to you','number']]},
+Suppliers:{key:'suppliers',fields:[['name','Supplier name','text',1],['phone','Phone','tel'],['opening','Opening balance you owe','number']]}
+};
+const nav=['Dashboard','Products','Sales','Purchases','Expenses','Customers','Suppliers','Reports','Settings'];
+function total(arr,fn){return arr.reduce((s,x)=>s+fn(x),0)}
+function labelDate(x){return x.date||''}
+function renderTabs(){$('#tabs').innerHTML=nav.map(n=>`<button class="${tab===n?'active':''}" data-tab="${n}">${n}</button>`).join('');$('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()})}
+function card(label,value,sub=''){return `<div class="card"><div class="muted">${label}</div><div class="metric">${value}</div>${sub?`<div class="muted">${sub}</div>`:''}</div>`}
+function addButton(t){return `<div class="actions"><button class="primary" data-add="${t}">＋ Add ${t.slice(0,-1)||t}</button></div>`}
+function listRows(k){let arr=db[k]||[];if(!arr.length)return '<div class="empty">No records yet. Tap Add to create your first record.</div>';return `<div class="list">${arr.slice().reverse().map((x,i)=>`<div class="item"><div class="row"><strong>${esc(x.name||x.title||productName(x.product)||x.product||'Record')}</strong><span class="amount">${money(x.amount ?? ((x.qty*x.price)||0))}</span></div><small>${esc(x.date||x.category||x.phone||'')} ${x.qty?` · Qty ${x.qty}`:''}</small><div class="actions"><button class="secondary" data-edit="${k}:${arr.length-1-i}">Edit</button><button class="secondary danger" data-del="${k}:${arr.length-1-i}">Delete</button></div></div>`).join('')}</div>`}
+function productName(id){return db.products.find(p=>p.id===id)?.name||''}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dashboard(){let revenue=total(db.sales,x=>x.qty*x.price), purchases=total(db.purchases,x=>x.qty*x.price), expenses=total(db.expenses,x=>+x.amount), costOfSold=total(db.sales,x=>x.qty*(db.products.find(p=>p.id===x.product)?.buy||0)),profit=revenue-costOfSold-expenses;return `<h2>Business overview</h2><p class="muted">${today()} · Your shop at a glance</p><div class="grid">${card('Total sales',money(revenue))}${card('Purchases',money(purchases))}${card('Expenses',money(expenses))}${card('Estimated profit',money(profit))}</div><h2>Quick actions</h2><div class="actions">${['Sales','Purchases','Products','Expenses'].map(x=>`<button class="primary" data-add="${x}">＋ ${x}</button>`).join('')}</div><h2>Stock alerts</h2>${lowStock()}<h2>Recent sales</h2>${db.sales.length?listRows('sales'):'<div class="empty">Your sales will appear here.</div>'}`}
+function lowStock(){let low=db.products.filter(p=>+p.stock<=+p.min);return low.length?`<div class="list">${low.map(p=>`<div class="item row"><strong>${esc(p.name)}</strong><span class="amount">${p.stock} left</span></div>`).join('')}</div>`:'<div class="card muted">No low-stock products right now.</div>'}
+function inventory(){return `<h2>Products & inventory</h2>${addButton('Products')}<div class="grid">${card('Different products',db.products.length)}${card('Total units',total(db.products,p=>+p.stock))}</div>${listRows('products')}`}
+function report(){let rev=total(db.sales,x=>x.qty*x.price),cost=total(db.sales,x=>x.qty*(db.products.find(p=>p.id===x.product)?.buy||0)),exp=total(db.expenses,x=>+x.amount);return `<h2>Reports</h2><div class="grid">${card('Sales revenue',money(rev))}${card('Cost of goods sold',money(cost))}${card('Expenses',money(exp))}${card('Estimated net profit',money(rev-cost-exp))}</div><p class="muted">Profit estimate = sales revenue − product purchase cost − recorded expenses. This does not include unpaid customer balances or other adjustments.</p><h2>All transactions</h2><div class="list">${['sales','purchases','expenses'].map(k=>`<div class="item row"><strong>${k[0].toUpperCase()+k.slice(1)}</strong><span>${db[k].length} records</span></div>`).join('')}</div>`}
+function settings(){return `<h2>Settings & backup</h2><div class="card"><strong>Shop details</strong><p>Gulbahar And Sons Super Point</p><p class="muted">Currency: Pakistani Rupees (PKR)</p></div><div class="actions"><button class="primary" id="export">Download backup</button><button class="secondary" id="importBtn">Restore backup</button><input id="importFile" type="file" accept="application/json" hidden></div><div class="card"><strong>Important</strong><p class="muted">Records are saved in this browser on this phone. Export a backup regularly. Clearing browser data or uninstalling the app may erase records unless you have a backup.</p></div>`}
+function render(){renderTabs();let v=$('#view');if(tab==='Dashboard')v.innerHTML=dashboard();else if(tab==='Products')v.innerHTML=inventory();else if(tab==='Reports')v.innerHTML=report();else if(tab==='Settings')v.innerHTML=settings();else{let c=configs[tab];v.innerHTML=`<h2>${tab}</h2>${addButton(tab)}${listRows(c.key)}`}
+v.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openForm(b.dataset.add));v.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>del(b.dataset.del));v.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editForm(b.dataset.edit));if($('#export'))$('#export').onclick=backup;if($('#importBtn'))$('#importBtn').onclick=()=>$('#importFile').click();if($('#importFile'))$('#importFile').onchange=restore}
+function openForm(type,index=null){let c=configs[type];if(!c)return;edit=index===null?null:{key:c.key,index};let old=edit?db[c.key][index]:{};$('#dlgTitle').textContent=(edit?'Edit ':'Add ')+type.slice(0,-1);$('#fields').innerHTML='<div class="formgrid">'+c.fields.map(([name,title,t,req])=>{let val=old[name]??(name==='date'?today():name==='paid'?'':name==='min'?5:'');let input=t==='product'?`<select name="${name}" required><option value="">Choose product</option>${db.products.map(p=>`<option value="${p.id}" ${val===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>`:`<input name="${name}" type="${t}" value="${esc(val)}" ${req?'required':''} ${t==='number'?'min="0" step="any"':''}>`;return `<div class="${['name','title'].includes(name)?'full':''}"><label>${title}</label>${input}</div>`}).join('')+'</div>';$('#dlg').showModal()}
+function editForm(s){let [k,i]=s.split(':');let type=Object.keys(configs).find(t=>configs[t].key===k);if(type)openForm(type,+i)}
+function del(s){let [k,i]=s.split(':');if(confirm('Delete this record?')){db[k].splice(+i,1);save()}}
+$('#entryForm').onsubmit=e=>{e.preventDefault();let c=Object.values(configs).find(c=>c.key===edit?.key)||configs[tab];if(!c)return;let data=Object.fromEntries(new FormData(e.target).entries());c.fields.forEach(([n,,t])=>{if(t==='number')data[n]=Number(data[n]||0)});data.id=edit?db[c.key][edit.index].id:crypto.randomUUID();if(edit)db[c.key][edit.index]=data;else db[c.key].push(data);$('#dlg').close();save()};
+function backup(){let blob=new Blob([JSON.stringify({app:'KamransBusinessManager',version:1,db},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kamrans-business-manager-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.db)throw Error();keys.forEach(k=>db[k]=Array.isArray(x.db[k])?x.db[k]:[]);save();alert('Backup restored.')}catch{alert('This backup file is not valid.')}};r.readAsText(f)}
+$('#closeDlg').onclick=$('#cancelDlg').onclick=()=>$('#dlg').close();
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+</script>
+</body></html>
