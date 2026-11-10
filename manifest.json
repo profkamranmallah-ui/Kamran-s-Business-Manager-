@@ -1,0 +1,22 @@
+{
+  "name": "Kamran's Business Manager",
+  "short_name": "Kamran Business",
+  "description": "Gulbahar And Sons Super Point business manager",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f8",
+  "theme_color": "#102b52",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
